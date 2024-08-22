@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tasks</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{% url 'task-create' %}">Create Task</a>
+            {% if user.is_authenticated %}
+                <span>Welcome, {{ user.username }}</span>
+                <a href="{% url 'logout' %}">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}">Register</a>
+            {% endif %}
+        </nav>
+    </header>
+    <main>
+        <div class="container">
+            <h1>My Tasks</h1>
+            <ul class="task-list">
+                {% for task in tasks %}
+                <li>
+                    <a href="{% url 'task-detail' task.id %}">
+                        <h2>{{ task.title }}</h2>
+                        <p>Status: {{ task.status }}</p>
+                        <p>Due Date: {{ task.due_date }}</p>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </main>
+</body>
+</html>
+

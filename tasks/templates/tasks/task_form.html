@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if task %}Edit{% else %}Create{% endif %} Task</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{% url 'task-list' %}">Task List</a>
+        </nav>
+    </header>
+    <main>
+        <div class="container">
+            <h1>{% if task %}Edit{% else %}Create{% endif %} Task</h1>
+            <form method="POST" action="{% if task %}{% url 'task-update' task.id %}{% else %}{% url 'task-create' %}{% endif %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{% if task %}{{ task.title }}{% endif %}" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" required>{% if task %}{{ task.description }}{% endif %}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="due_date">Due Date</label>
+                    <input type="date" id="due_date" name="due_date" value="{% if task %}{{ task.due_date|date:'Y-m-d' }}{% endif %}" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option value="Todo" {% if task and task.status == 'Todo' %}selected{% endif %}>Todo</option>
+                        <option value="Inprogress" {% if task and task.status == 'Inprogress' %}selected{% endif %}>Inprogress</option>
+                        <option value="Done" {% if task and task.status == 'Done' %}selected{% endif %}>Done</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">{% if task %}Update{% else %}Create{% endif %} Task</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
