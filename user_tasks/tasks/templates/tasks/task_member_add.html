@@ -1,0 +1,23 @@
+<!-- tasks/templates/tasks/task_member_add.html -->
+
+{% extends "tasks/base.html" %}
+
+{% block title %}Add Task Member{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Add Member to {{ task.title }}</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="user_id">User ID</label>
+                <input type="text" class="form-control" id="user_id" name="user_id" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Member</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

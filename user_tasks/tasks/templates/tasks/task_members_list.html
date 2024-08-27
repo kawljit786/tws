@@ -1,0 +1,27 @@
+<!-- tasks/templates/tasks/task_members_list.html -->
+
+{% extends "tasks/base.html" %}
+
+{% block title %}Task Members{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Members of {{ task.title }}</h3>
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            {% for member in members %}
+                <li class="list-group-item">
+                    {{ member.user.username }}
+                    <form method="post" action="{% url 'task-member-remove' task.id member.user.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm float-right">Remove</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'task-member-add' task.id %}" class="btn btn-primary mt-3">Add Member</a>
+    </div>
+</div>
+{% endblock %}

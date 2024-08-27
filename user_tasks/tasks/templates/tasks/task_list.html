@@ -1,0 +1,23 @@
+<!-- tasks/templates/tasks/task_list.html -->
+
+{% extends "tasks/base.html" %}
+
+{% block title %}Task List{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Task List</h3>
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            {% for task in tasks %}
+                <li class="list-group-item">
+                    <a href="{% url 'task-detail' task.id %}">{{ task.title }}</a>
+                    <span class="badge badge-secondary float-right">{{ task.due_date }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

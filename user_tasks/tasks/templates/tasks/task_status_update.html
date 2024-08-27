@@ -1,0 +1,27 @@
+<!-- tasks/templates/tasks/task_status_update.html -->
+
+{% extends "tasks/base.html" %}
+
+{% block title %}Update Task Status{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Update Status of {{ task.title }}</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select class="form-control" id="status" name="status" required>
+                    <option value="Todo" {% if task.status == 'Todo' %}selected{% endif %}>Todo</option>
+                    <option value="Inprogress" {% if task.status == 'Inprogress' %}selected{% endif %}>Inprogress</option>
+                    <option value="Done" {% if task.status == 'Done' %}selected{% endif %}>Done</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Status</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
