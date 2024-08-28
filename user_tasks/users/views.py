@@ -1,124 +1,84 @@
 # users/views.py
 
-# from django.shortcuts import render, redirect, reverse
-# from django.contrib.auth import authenticate
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework.authtoken.models import Token
-# from rest_framework.permissions import IsAuthenticated, AllowAny
-# from .serializers import UserSerializer
-# from django.contrib.auth import authenticate, login
-
-# class RegisterView(APIView):
-#     permission_classes = [AllowAny]
-#     def get(self, request):
-#         return render(request, 'register.html')
-
-#     def post(self, request):
-#         data = {
-#             'username': request.POST.get('username'),
-#             'email': request.POST.get('email'),
-#             'password': request.POST.get('password')
-#         }
-#         serializer = UserSerializer(data=data)
-#         if serializer.is_valid():
-#             user = serializer.save()
-#             token, created = Token.objects.get_or_create(user=user)
-#             response = redirect('login')  # Redirect to login after successful registration
-#             response.set_cookie(key='auth_token', value=token.key, httponly=True)
-#             return response
-#         else:
-#             return render(request, 'register.html', {'errors': serializer.errors})
-
-
-# class LoginView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def get(self, request, *args, **kwargs):
-#         return render(request, 'login.html')
-
-#     def post(self, request, *args, **kwargs):
-#         username = request.POST.get('username')
-#         password = request.POST.get('password')
-#         user = authenticate(username=username, password=password)
-#         if user is not None:
-#             login(request, user)
-#             return redirect(reverse('task-list'))
-#         return render(request, 'login.html', {'error': 'Invalid credentials'})
-
-# # class LoginView(APIView):
-# #     permission_classes = [AllowAny]
-# #     def get(self, request):
-# #         return render(request, 'login.html')
-
-# #     def post(self, request):
-# #         username = request.data.get('username')
-# #         password = request.data.get('password')
-# #         user = authenticate(username=username, password=password)
-# #         if user:
-# #             token, created = Token.objects.get_or_create(user=user)
-# #             response = Response({"token": token.key})
-# #             response.set_cookie(key='auth_token', value=token.key, httponly=True)
-# #             return redirect('/tasks/create/')  # Redirect to the task creation page
-# #         return Response({"error": "Invalid credentials"}, status=400)
-
-# class LogoutView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         return render(request, 'logout.html')
-
-#     def post(self, request):
-#         request.user.auth_token.delete()
-#         response = Response({"message": "Logged out successfully"})
-#         response.delete_cookie('auth_token')
-#         return response
-
-
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib.auth import logout
-from django.contrib.auth import login, authenticate
-from django.contrib import messages
-# from .models import Task, Comment
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
 
-# Registration View
-def register(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        
-        if password:
-            if User.objects.filter(username=username).exists():
-                messages.error(request, 'Username already exists.')
-            elif User.objects.filter(email=email).exists():
-                messages.error(request, 'Email is already registered.')
-            else:
-                user = User.objects.create_user(username=username, email=email, password=password)
-                user.save()
-                # login(request, user)
-                return redirect('login')
-        else:
-            messages.error(request, 'Passwords do not match.')
-    
-    return render(request, 'register.html')
 
-# Login View
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        # Render the registration form
+        return render(request, 'users/register.html')
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        email = request.data.get('email')
+
+        if User.objects.filter(username=username).exists():
+            return render(request, 'users/register.html', {'error': 'Username already taken'})
+
+        user = User.objects.create_user(username=username, password=password, email=email)
+        user.save()
+
+        # Automatically log the user in after registration
         user = authenticate(request, username=username, password=password)
+        login(request, user)
+
+        # Generate JWT tokens
+        response = redirect('login')
+        refresh = RefreshToken.for_user(user)
+        response.set_cookie('access_token', str(refresh.access_token), httponly=True)
+        response.set_cookie('refresh_token', str(refresh), httponly=True)
+        return response
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # Render the login form
+        return render(request, 'users/login.html')
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(request, username=username, password=password)
+
         if user is not None:
             login(request, user)
-            return redirect('task-create')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    
-    return render(request, 'login.html')
 
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            # Redirect to the task creation view after successful login
+            response = redirect('task-create')
+
+            # # Add the JWT token to the response headers for use in APIs
+            response.set_cookie('refresh_token', refresh_token, httponly=True, secure=True)
+            response.set_cookie('access_token', access_token, httponly=True, secure=True)
+            return response
+        else:
+            # Invalid credentials, re-render the login page with an error message
+            return render(request, 'users/login.html', {'error': 'Invalid credentials'})
 
 def logout_view(request):
     logout(request)
-    return redirect('login') 
+    
+    # Redirect to the login page
+    response = redirect('login')
+    
+    # Clear the JWT token from cookies
+    response.delete_cookie('access_token')
+    
+    return response

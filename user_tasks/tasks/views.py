@@ -1,18 +1,15 @@
-# tasks/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from .models import Task, Comment
-from .serializers import TaskSerializer, CommentSerializer
+from .serializers import TaskSerializer
 from django.contrib.auth.models import User
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class TaskCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    # permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, *args, **kwargs):
         users = User.objects.all()  # Retrieve all users for member selection
@@ -24,19 +21,22 @@ class TaskCreateView(APIView):
             'description': request.POST.get('description'),
             'due_date': request.POST.get('due_date'),
             'status': request.POST.get('status'),
-            'created_by': 1
+            'created_by': request.user.id  # Assign the current logged-in user
         }
 
         serializer = TaskSerializer(data=data)
         if serializer.is_valid():
             task = serializer.save()
+
             # Handling members assignment
             members_ids = request.POST.getlist('members')
             members = User.objects.filter(id__in=members_ids)
             task.members.set(members)
             task.save()
-            return redirect(reverse('task-list'))
-        
+            
+            return redirect(reverse('task-list'))  # Redirect to the task list view
+
+        # If the serializer is not valid, render the form with errors
         users = User.objects.all()  # Retrieve users again in case of error
         return render(request, 'tasks/task_create.html', {'errors': serializer.errors, 'users': users})
 
@@ -44,7 +44,7 @@ class TaskCreateView(APIView):
 
 class TaskListView(APIView):
     permission_classes = [IsAuthenticated]
-    # permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, *args, **kwargs):
         tasks = Task.objects.all()
@@ -52,7 +52,8 @@ class TaskListView(APIView):
 
 class TaskDetailView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['pk'])
@@ -61,7 +62,8 @@ class TaskDetailView(APIView):
 
 class TaskUpdateView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['pk'])
@@ -84,8 +86,9 @@ class TaskUpdateView(APIView):
 
 class TaskDeleteView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
     def post(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['pk'])
         task.delete()
@@ -93,7 +96,8 @@ class TaskDeleteView(APIView):
 
 class TaskMemberAddView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['task_id'])
@@ -104,7 +108,8 @@ class TaskMemberAddView(APIView):
 
 class TaskMemberRemoveView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['task_id'])
@@ -114,7 +119,8 @@ class TaskMemberRemoveView(APIView):
 
 class TaskMembersListView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['task_id'])
@@ -123,7 +129,8 @@ class TaskMembersListView(APIView):
 
 class CommentCreateView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['task_id'])
@@ -133,7 +140,8 @@ class CommentCreateView(APIView):
 
 class TaskStatusUpdateView(APIView):
     # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=kwargs['pk'])
